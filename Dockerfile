@@ -7,6 +7,10 @@ RUN mkdir -p $APP_HOME/build && chown -R $APP_USER:$APP_USER $APP_HOME
 WORKDIR $APP_HOME/build
 USER $APP_USER
 
+ARG TARGETOS
+ARG TARGETARCH
+ARG CGO_ENABLED=0
+
 # build master branch
 # RUN git clone https://github.com/folbricht/routedns .
 
@@ -24,14 +28,8 @@ RUN git clone https://github.com/folbricht/routedns . \
 
 WORKDIR $APP_HOME/build/cmd/routedns
 
-# Enable and adjust git commit, when you build specific commit above
-# RUN sed -i -E 's/[0-9]{1}.[0-9]{1}.[0-9]{2}-[a-z]{4}[0-9]{1}/&-git-0ca90dd/' main.go
-
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=amd64
 # https://opensource.com/article/22/4/go-build-options
-RUN go clean \
+RUN CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} go clean \
     && go build -ldflags="-s -w" \
     && cp -p routedns $APP_HOME/
 
@@ -39,7 +37,7 @@ WORKDIR $APP_HOME
 
 RUN rm -rf build
 
-FROM alpine
+FROM alpine:3.19.1
 
 ENV APP_HOME /app
 WORKDIR $APP_HOME
